@@ -11,16 +11,20 @@ def get_kit_body(kit_name):
     # Возвращается новый словарь с нужным значением kit_body
     return current_body
 
+def create_user_and_get_token():
+    # создаём пользователя, чтобы получить токен для набора
+    user_response = sender_stand_request.post_new_user(data.user_body)
+    return user_response.json()["authToken"]
+
 def positive_assert(kit_name):
     #Формируем тело запроса
     kit_body = get_kit_body(kit_name)
-    print("SENDING:", kit_body)
+    auth_token = create_user_and_get_token()
 
     #Создаём набор
-    kit_response = sender_stand_request.post_new_kit(kit_body)
-    print("KIT RESPONSE:", kit_response.json())
-
-    #Проверяем код ответа
+    kit_response = sender_stand_request.post_new_kit(kit_body, auth_token)
+    #Проверяем код ответа именно на запрос создания набора
+    #Не совсем понимаю зачем его убирать если мы проверяем, что набор создался прежде чем проверять, что он появился в списке наборов
     assert kit_response.status_code == 201
 
     #Сохраняем тело ответа один раз
@@ -28,10 +32,10 @@ def positive_assert(kit_name):
     assert created_kit["id"] != ""
 
     #Получаем все наборы карточки
-    kits_by_card_response = sender_stand_request.get_kits_by_card_id(kit_body["cardId"])
-    assert kits_by_card_response.status_code == 200
-
-    kits_list = kits_by_card_response.json()
+    kits_by_auth_response = sender_stand_request.get_kits_by_auth_token(auth_token)
+    assert kits_by_auth_response.status_code == 200
+    
+    kits_list = kits_by_auth_response.json()
 
     #Ищем созданный набор по id
     matching = [k for k in kits_list if k["id"] == created_kit["id"]]
@@ -44,9 +48,10 @@ def positive_assert(kit_name):
 def negative_assert_symbol(kit_name):
     # В переменную kit_body сохраняется обновлённое тело запроса
     kit_body = get_kit_body(kit_name)
+    auth_token = create_user_and_get_token()
 
     # В переменную response сохраняется результат 
-    response = sender_stand_request.post_new_kit(kit_body)
+    response = sender_stand_request.post_new_kit(kit_body, auth_token)
 
     # Проверяется, что код ответа равен 400
     assert response.status_code == 400
@@ -56,8 +61,10 @@ def negative_assert_symbol(kit_name):
 
 # Функция для негативной проверки, когда в ответе ошибка: "Не все необходимые параметры были переданы"
 def negative_assert_no_name(kit_body):
+    auth_token = create_user_and_get_token()
+
     # В переменную response сохраняется результат 
-    response = sender_stand_request.post_new_kit(kit_body)
+    response = sender_stand_request.post_new_kit(kit_body, auth_token)
 
     # Проверяется, что код ответа равен 400
     assert response.status_code == 400
@@ -129,8 +136,10 @@ def test_create_kit_empty_name_get_error_response():
 def test_create_kit_number_type_name_get_error_response():
     # В переменную kit_body сохраняется обновлённое тело запроса
     kit_body = get_kit_body(12)
+    auth_token = create_user_and_get_token()
+
     # В переменную kit_response сохраняется результат запроса на создание набора:
-    response = sender_stand_request.post_new_kit(kit_body)
+    response = sender_stand_request.post_new_kit(kit_body, auth_token)
 
     # Проверка кода ответа
     assert response.status_code == 400
