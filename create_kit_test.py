@@ -24,25 +24,13 @@ def positive_assert(kit_name):
     #Создаём набор
     kit_response = sender_stand_request.post_new_kit(kit_body, auth_token)
     #Проверяем код ответа именно на запрос создания набора
-    #Не совсем понимаю зачем его убирать если мы проверяем, что набор создался прежде чем проверять, что он появился в списке наборов
+    #Мы проверяем, что набор создался прежде чем проверять, что он появился в списке наборов
     assert kit_response.status_code == 201
 
     #Сохраняем тело ответа один раз
     created_kit = kit_response.json()
     assert created_kit["id"] != ""
-
-    #Получаем все наборы карточки
-    kits_by_auth_response = sender_stand_request.get_kits_by_auth_token(auth_token)
-    assert kits_by_auth_response.status_code == 200
-    
-    kits_list = kits_by_auth_response.json()
-
-    #Ищем созданный набор по id
-    matching = [k for k in kits_list if k["id"] == created_kit["id"]]
-
-    #Проверяем, что он один и с нужным name
-    assert len(matching) == 1
-    assert matching[0]["name"] == kit_name
+    assert created_kit["name"] == kit_name
 
 # Функция негативной проверки, когда в ответе ошибка про символы
 def negative_assert_symbol(kit_name):

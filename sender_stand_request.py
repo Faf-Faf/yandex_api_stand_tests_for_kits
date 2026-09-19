@@ -17,10 +17,3 @@ def post_new_kit(body, auth_token):
         json=body,
         headers=headers
     )
-
-def get_kits_by_auth_token(auth_token):
-    headers = {**data.headers, "Authorization": f"Bearer {auth_token}"}
-    return requests.get(
-        configuration.URL_SERVICE + configuration.CREATE_KIT_PATH,
-        headers=headers
-    )
